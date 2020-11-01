@@ -8,7 +8,7 @@ BATCH_SIZE = 100
 LEARNING_RATE_BASE = 0.8
 LEARNING_RATE_DECAY = 0.99
 REGULARAZTION_RATE = 0.0001
-TRAINING_STEPS = 10
+TRAINING_STEPS = 3000
 MOVING_AVERAGE_DECAY = 0.99
 
 MODEL_SAVE_PATH = 'C:/Users/28674/Desktop/tensorflow/5/temp/model/'
@@ -24,7 +24,6 @@ def train(mnist):
     y = mnist_inference.inference(x,regularizer)
 
     global_step = tf.Variable(0,trainable=False)
-    print(global_step,1111)
     variable_averages = tf.train.ExponentialMovingAverage(
     MOVING_AVERAGE_DECAY, global_step)
 
@@ -43,7 +42,6 @@ def train(mnist):
     train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss,global_step=global_step)
     with tf.control_dependencies([train_step,variables_averages_op]):
         train_op = tf.no_op(name='train')
-    print(train_step,123123)
     saver = tf.train.Saver()
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
