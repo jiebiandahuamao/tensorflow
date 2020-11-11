@@ -1,10 +1,10 @@
 import numpy as np 
 import tensorflow as tf 
 
-from tensorflow.models.rnn.ptb import reader 
+import reader
 
 DATA_PATH = 'C:\\Users\\Administrator\\Desktop\\data'
-HEDDEN_SIZE = 200
+HIDDEN_SIZE = 200
 
 NUM_LAYERS = 2
 VOCAB_SIZE = 10000
@@ -19,7 +19,7 @@ NUM_EPOCH = 2
 KEEP_PROB = 0.5
 MAX_GRAD_NORM = 5
 
-class PTModel(object):
+class PTBModel(object):
     def __init__(self,is_training,batch_size,num_steps):
         self.batch_size = batch_size
         self.num_steps = num_steps
@@ -30,15 +30,15 @@ class PTModel(object):
 
         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(HIDDEN_SIZE)
         if is_training:
-            lstm_cell = tf.nn.run_cell.DropoutWrapper(
+            lstm_cell = tf.nn.rnn_cell.DropoutWrapper(
                 lstm_cell,output_keep_prob=KEEP_PROB
             )
-        cell = tf.nn.runn_cell.MultiRNNCell([lstm_cell] * NUM_LAYERS)
+        cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * NUM_LAYERS)
 
         self.initial_state = cell.zero_state(batch_size,tf.float32)
-        embedding = tf.get_variable("embedding",[VOCAB_SIZE,HEDDEN_SIZE])
+        embedding = tf.get_variable("embedding",[VOCAB_SIZE,HIDDEN_SIZE])
 
-        input = tf.nn.embedding_lookup(embedding,self.input_data)
+        inputs = tf.nn.embedding_lookup(embedding,self.input_data)
         if is_training:
             inputs = tf.nn.dropout(inputs,KEEP_PROB)
         outputs = []
@@ -46,11 +46,11 @@ class PTModel(object):
         with tf.variable_scope("RNN"):
             for time_step in range(num_steps):
                 if time_step > 0:
-                    tf.get_variable_scope().reuser_variables()
+                    tf.get_variable_scope().reuse_variables()
                 cell_output,state = cell(inputs[:,time_step,:],state)
                 outputs.append(cell_output)
-        output = tf.reshape(tf.concat(1,outputs),[-1,HEDDEN_SIZE])
-        weight = tf.get_varable("weight",[HTDDEN_SIZE,VOCAB_SIZE])
+        output = tf.reshape(tf.concat(1,outputs),[-1,HIDDEN_SIZE])
+        weight = tf.get_varable("weight",[HIDDEN_SIZE,VOCAB_SIZE])
         bias = tf.get_variable("bias",[VOCAB_SIZE])
         logits = tf.matmul(output,weight) + bias
 
@@ -88,9 +88,9 @@ def run_epoch(session,model,data,train_op,output_log):
     return np.exp(total_costs/iters)
 
 def main(_):
-    train_data,valid_data,test_data = reader.ptb_raw_data(DATA_PATH)
+    train_data,valid_data,test_data,vocabulary = reader.ptb_raw_data(DATA_PATH)
     initializer = tf.random_uniform_initializer(-0.05,0.005)
-    with tf.variable_scope("language_model",reuser=None,initializer=initializer):
+    with tf.variable_scope("language_model",reuse=None,initializer=initializer):
         train_model = PTBModel(True,TRAIN_BATCH_SIZE,TRAIN_NUM_STEP)
     with tf.variable_scope("language_model",reuse=True,initializer=initializer):
         eval_model = PTBModel(False,EVAL_BATCH_SIZE,EVAL_NUM_STEP)
